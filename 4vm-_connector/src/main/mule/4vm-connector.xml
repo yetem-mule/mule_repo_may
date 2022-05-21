@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="6a25b806-7631-4813-880f-4f2a8e2df254" >
+		<vm:connection />
+		<vm:queues >
+			<vm:queue queueName="quene1.basic" />
+		</vm:queues>
+	</vm:config>
+	<flow name="PUBLISH_MSG" doc:id="9ad9ad80-fb4f-4518-ad73-252f39c1c9b9" >
+		<http:listener doc:name="HTTP POST req" doc:id="ccec99d6-97ea-4ab2-a61c-7c86e16cb9cf" config-ref="HTTP_Listener_config" path="/vm"/>
+		<logger level="INFO" doc:name="LOG STARTS" doc:id="b3b4662d-67a7-49f8-90bc-c97bacf60d89" message="before publish "/>
+		<vm:publish doc:name="PUBLISH TO A QUEUE" doc:id="8dd83088-4b02-40dd-9981-a6c6b75d9846" config-ref="VM_Config" queueName="quene1.basic"/>
+		<logger level="INFO" doc:name="LOG ENDS" doc:id="36f481f7-053c-44ca-82d7-913a3defb194" message="after published"/>
+	</flow>
+	<flow name="publish-listner" doc:id="c52ea83f-fff0-4746-82ca-b6531025d46e" >
+		<vm:listener doc:name="BASIC queu listner" doc:id="c277422e-82cd-4383-8b42-3ebf2511a352" config-ref="VM_Config" queueName="quene1.basic"/>
+		<flow-ref doc:name='calls "log payload"' doc:id="8252e4f4-072d-48ab-b597-07df03cdfd08" name="PUBLISH_MSG"/>
+	</flow>
+	<flow name="log_payload" doc:id="09881a5d-d79e-43c3-8724-3906ea23fe20" >
+		<logger level="INFO" doc:name="print payload" doc:id="787b269e-38d0-44e4-aede-934ac292086d" message="#[payload]"/>
+	</flow>
+</mule>

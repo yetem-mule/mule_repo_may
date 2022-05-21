@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="2udemy-dwFlow" doc:id="f3444ad2-8a14-46a2-896e-ea70a1685b40" >
+		<ee:transform doc:name="Transform Message" doc:id="180127f0-90ac-44b3-a346-3852bd568586" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+var itemsList = {
+	"items":[
+		"item":{
+			"description": "Product1",
+			"quantity": 1,
+			"unit_price": 20,
+			"toDiscount": "No"
+		},
+		"item":{
+			"description": "Product2",
+			"quantity": 2,
+			"unit_price": 30,
+			"toDiscount": "Yes"
+		},
+		"item":{
+			"description": "Product3",
+			"quantity": 3,
+			"unit_price": 40,
+			"toDiscount": "Yes"
+		}
+	]
+	}
+	
+		
+var sum_prices_cost = [17,10,20,5,10]
+
+output application/json
+---
+using (sum_prices_cost = [17, 10, 20, 5, 10] reduce ((element, accumulated) -> accumulated + element))
+{
+	"products": itemsList.items.*item default [] map ((currItem) -> 
+		using (item_total_price = currItem.quantity * currItem.unit_price)
+		if (item_total_price < sum_prices_cost) (currItem.description) else "")
+						
+	
+		
+	
+	]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

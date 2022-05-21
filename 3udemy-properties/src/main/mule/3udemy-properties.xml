@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="96d6a576-7b08-4d04-9abd-03b1009a2bb7" file="tst.yaml" />
+	<flow name="3udemy-propertiesFlow" doc:id="269cb991-811b-4ced-8b60-b78bb7582bca" >
+		<http:listener doc:name="Listener" doc:id="1fcddc7a-9c3e-4b6b-bf65-441ce50d45d2" path="${http.path}" config-ref="HTTP_Listener_config" allowedMethods="POST"/>
+		<set-variable value='#[lower(Mule::p("word"))]' doc:name="Set Variable" doc:id="c25e78aa-df98-41bd-b320-0b5d566cb737" variableName="wordToFind"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1aa84da9-d7f7-4a3d-a82a-29f3bf48fb2f" message="#[vars.wordToFind]"/>
+		<set-payload doc:name="Set Payload" doc:id="4543971f-7872-4884-ab83-5f888ae099a4" value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	"exist": if (payload.list.*word[?(lower($) contains vars.wordToFind)]?) ("YES") else ("NO")&#10;&#10;}]'/>
+	</flow>
+</mule>

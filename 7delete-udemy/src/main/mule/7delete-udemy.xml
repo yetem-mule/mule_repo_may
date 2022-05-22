@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="50be9365-4e1a-45f2-b1b3-86db586d6081" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="79ed444d-a82d-4106-a110-49b3a99b905b" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="admin" database="mule_db" />
+	</db:config>
+	<flow name="delete-data" doc:id="0ef0a8b4-3700-4f8d-970f-fe6c2a227a2d" >
+		<http:listener doc:name="DELETE" doc:id="5bf7958a-4b13-49ec-8c39-d3b9cec240fc" config-ref="HTTP_Listener_config" path="/delete/{customerID}" allowedMethods="DELETE"/>
+		<db:delete doc:id="cc72eb1a-1cbc-47d9-86e3-4362615cf3ea" config-ref="Database_Config">
+			<db:sql ><![CDATA[delete from customers where id=:clientID;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+'clientID': attributes.uriParams.customerID
+}]]]></db:input-parameters>
+		</db:delete>
+		<logger level="INFO" doc:name="Logger" doc:id="ef833ef0-d91b-4d4b-b6df-ff82387a06fc" message="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]"/>
+		<choice doc:name="Choice" doc:id="4e17ec28-4fb7-469d-8632-e7301476ba7c" >
+			<when expression="#[payload &gt; 0]">
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;"success": payload]' doc:name="Set Payload" doc:id="9c915108-2d85-4252-8991-5f08b06b6713" />
+			</when>
+			<otherwise >
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;"in success": payload]' doc:name="Set Payload" doc:id="21795e60-6507-459e-9587-c5b5fdd13366" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

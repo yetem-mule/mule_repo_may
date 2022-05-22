@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8cb906fa-df81-4b3e-a9cf-825b42410bae" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="bba99eed-a858-4e51-a1f0-fdce689d5070" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="admin" database="mule_db" />
+	</db:config>
+	<flow name="5db-connectorFlow" doc:id="558a5bae-78c1-4491-ba7b-ef6a6c7b5beb" >
+		<http:listener doc:name="HTTP GET" doc:id="1ade2319-b869-4024-9f04-c09abe06c5b1" config-ref="HTTP_Listener_config" path="/db-conn/{ID}"/>
+		<db:select doc:id="d1b772c4-99c9-487f-b74b-5b37abffb84f" config-ref="Database_Config" doc:name="select using id">
+			<db:sql ><![CDATA[select * from customers where id=:cusId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+cusId: attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="5e0962e7-4896-4067-8e81-957b37605856" message="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]"/>
+		<choice doc:name="CHK IF ID EXIST" doc:id="3e513037-a7d7-4a17-9478-174ddc114c6f" >
+			<when expression="#[!isEmpty(payload)]">
+				<set-payload value="#[payload]" doc:name="custmer data avail" doc:id="731be7f2-cff1-40f6-b220-b6d463f4dc55" />
+			</when>
+			<otherwise >
+				<set-payload value='#["no customer available"]' doc:name="" doc:id="0ec72416-2f26-40b2-834c-5c3d38d9ac24" />
+			</otherwise>
+		</choice>
+		<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	&#10;	"customers": payload&#10;}]' doc:name="Set Payload" doc:id="20982540-a78c-4af8-afa5-1130d040eb14" />
+	</flow>
+	<flow name="insert_cus_data" doc:id="c12ed749-f667-4322-9550-a4879754e72b" >
+		<http:listener doc:name="POST" doc:id="45cda78f-114f-4032-9bbc-b45a79e444d8" config-ref="HTTP_Listener_config" path="/insert" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="84115adf-9169-4c21-b7f7-216b4048a57d" message="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]"/>
+		<db:insert doc:name="INSERT TO DB" doc:id="aeb746ec-ff34-432c-b954-324b63e356bc" config-ref="Database_Config" autoGenerateKeys="true">
+			<db:sql ><![CDATA[INSERT INTO customers (id,customerName) values(:cusid,:clientName)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+clientName: payload.customer.customerName,
+cusid: payload.customer.id
+}]]]></db:input-parameters>
+		</db:insert>
+		<choice doc:name="validate the insert" doc:id="1d6df034-d63b-4715-88b1-3ccda5f23157" >
+			<when expression="#[payload.affectedRows &gt; 0]">
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	&#10;	 "success": payload&#10;}]' doc:name="payload with success" doc:id="df2efcd9-da13-4184-a9e4-faf16cf96bcf" />
+			</when>
+			<otherwise >
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	&#10;	 "in success": payload&#10;}]' doc:name="payload with WO success" doc:id="2c3604a4-00bd-4f44-8385-f0e4d65f0f74" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

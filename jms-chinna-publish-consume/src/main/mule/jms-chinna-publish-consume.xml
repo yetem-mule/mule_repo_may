@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="aefd2f49-9f5a-48bb-845b-44ea722d1338" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="admin" database="mule_db" />
+	</db:config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="ab182d5e-f9df-47f1-b919-12820a5e92d0" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="monter.com" doc:id="e59699ed-213b-43af-965b-fc8123e4dc8e" >
+		<scheduler doc:name="Scheduler" doc:id="a8e89005-dcc3-4041-88a9-8661000f8014" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="START LOG" doc:id="eb0baaff-4bdc-4e4c-a0a3-e87a78464c7b" message="start flow"/>
+		<db:select doc:name="Select emp profile from moster DB" doc:id="e1eaa225-128a-4f02-921f-9bf73e68fea7" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT id, customerName FROM mule_db.customers;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="profile payload as collection" doc:id="2d8b36e0-7b17-47be-b264-b319633086c6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (emp, indexOfemp) ->
+{
+	"empId" : emp.id,
+	"cusName":emp.customerName
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="Publish emp profile respnse as collection on targeted queue" doc:id="698a74b8-e8d7-4b21-bf11-6e2eb4f06722" config-ref="JMS_Config" destination="Q.MONSTER.PROFILE">
+			<jms:message outboundContentType="application/json" />
+		</jms:publish>
+		<logger level="INFO" doc:name="END LOG" doc:id="fa6ed0c6-aab7-4884-8102-8e4e268a900a" message="finish log"/>
+	</flow>
+</mule>

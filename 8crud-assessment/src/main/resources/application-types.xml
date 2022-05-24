@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="music" format="json">
+      <types:shape format="weave" example="examples/music-1.json"><![CDATA[%dw 2.0
+
+type music = {|
+  song: {|
+    songId: String, 
+    songName: String
+  |}
+|} {"example": "{\\\"song\\\":{\\\"songId\\\":\\\"5\\\",\\\"songName\\\":\\\"Nothing else matter\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#08ac4064-850f-4a6c-8aa0-a299fe2837df">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="music"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#557cb672-f4bb-479b-956b-0eeb3991e259">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="music"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

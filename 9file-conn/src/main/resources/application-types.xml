@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="vm" format="json">
+      <types:shape format="weave" example="examples/vminput.json"><![CDATA[%dw 2.0
+
+type vm = {|
+  fileName: String, 
+  customer: {|
+    customerId: String, 
+    customerName: String
+  |}
+|} {"example": "{\\\"fileName\\\":\\\"file1\\\",\\\"customer\\\":{\\\"customerId\\\":\\\"5\\\",\\\"customerName\\\":\\\"Rose\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#a7748c06-3c9a-4a43-acb5-7eaa1e2bd03e">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="vm"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#9bfcb40b-3ea8-485b-9395-abbd271e3416">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="vm"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#9cbb5b74-dc7a-4d3e-96df-7b6cffcca648">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="vm"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

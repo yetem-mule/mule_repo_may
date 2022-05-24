@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="read_from_db" doc:id="85a58829-5a2d-4c10-abbe-82bdad6f626e" >
+		<http:listener doc:name="HTTP GET" doc:id="3a9138f6-c92f-42c9-b504-be79b934d111" config-ref="HTTP_Listener_config1" path="${http.path.getAllSongs}" allowedMethods="GET"/>
+		<db:select doc:name="get all songs" doc:id="5d48d4d3-066b-4734-aa67-e86ad50c73fd" config-ref="Database_Config1">
+			<db:sql ><![CDATA[select * from musics;]]></db:sql>
+		</db:select>
+		<logger level="INFO" doc:name="Log before notification" doc:id="0efd8e54-afe2-45b8-8c6e-1c6df8107a13" message='#[%dw 2.0
+output application/json
+---
+{
+	"flowName": flow.name,
+	"message": "Log Before Notification"
+}]'/>
+		<vm:publish doc:name="Notify request Async" doc:id="0722c1a4-d025-4aa9-b885-e78f336d61ea" config-ref="VM_Config" queueName="queue.environment">
+			<vm:content ><![CDATA[#[{
+	"message": "a database call to get all songs has been performed"
+}]]]></vm:content>
+		</vm:publish>
+		<logger level="INFO" doc:name="Log after notification" doc:id="dbc5fd4d-60ad-46c2-8f10-2e8776c00661" message='#[%dw 2.0
+output application/json
+---
+{
+	"flowName": flow.name,
+	"message": "Log After Notification"
+}]'/>
+		<set-payload value="#[%dw 2.0
+output application/json
+---
+payload]" doc:name="Set Payload from JAVA to JSON" doc:id="93cfeacf-145b-4100-95b4-491acef4b5d2" />
+	</flow>
+	<flow name="insert_into_db" doc:id="4897f032-e2cd-4aa1-bbd6-bad1784c530f" >
+		<http:listener doc:name="HTTP POST" doc:id="53410a85-7e57-413c-804e-a504b1b02c40" config-ref="HTTP_Listener_config1" path="${http.path.addNewSong}" allowedMethods="POST"/>
+		<db:insert doc:name="Insert new song" doc:id="1b2b9d21-faca-49b2-a20a-8701590be096" config-ref="Database_Config1" autoGenerateKeys="true">
+			<db:sql ><![CDATA[INSERT INTO musics (musicName) VALUES (:songName)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'songName': payload.song.songName
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Log before notification" doc:id="266add4a-4a7e-4ad1-9e42-e70f436d5b7f" message='#[%dw 2.0
+output application/json
+---
+{
+	"flowName": flow.name,
+	"message": "Log Before Notification"
+}]'/>
+		<vm:publish doc:name="Notify request Async" doc:id="bd49ee5d-9881-4ea7-9b62-4de7bac89542" config-ref="VM_Config" queueName="queue.environment">
+			<vm:content ><![CDATA[#[{
+	"message": "a database call to insert a new song has been performed"
+}]]]></vm:content>
+		</vm:publish>
+		<logger level="INFO" doc:name="Log after notification" doc:id="3655a976-0121-4d5f-bba7-b5d5d292319e" message='#[%dw 2.0
+output application/json
+---
+{
+	"flowName": flow.name,
+	"message": "Log After Notification"
+}]'/>
+		<set-payload value="#[%dw 2.0
+output application/json
+---
+payload]" doc:name="Set Payload from JAVA to JSON" doc:id="4919af3e-7ab5-4573-ae3c-14b8e2cfde31" />
+	</flow>
+	<flow name="log_request_attempt" doc:id="d1ed5254-8928-403e-b50d-51eab2c368ba" >
+		<vm:listener queueName="queue.environment" doc:name="Listener" doc:id="90203239-c9a2-4f94-b8d4-78e3fb2c8d05" config-ref="VM_Config"/>
+		<logger level="INFO" doc:name="Log message" doc:id="20b83acb-3c00-48b8-9953-9477cf960401" message="#[%dw 2.0
+output application/json
+---
+payload]"/>
+	</flow>
+</mule>

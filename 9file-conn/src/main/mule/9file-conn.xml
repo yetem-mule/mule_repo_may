@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="a536bfc8-6373-4c78-b994-eb8b00729c9e" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="842e5dbb-1e66-48de-bc30-2893e7cbcdfa" >
+		<file:connection workingDir="C:\vmfiles" />
+	</file:config>
+	<flow name="write_file" doc:id="a2af09af-327d-4b63-9532-78116563f56c" >
+		<http:listener doc:name="POST WRITE" doc:id="ab7cd19e-3e1f-4a6d-b9f4-219ac7fe4746" config-ref="HTTP_Listener_config" path="/files"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a7748c06-3c9a-4a43-acb5-7eaa1e2bd03e" message="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]"/>
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload.fileName]" doc:name="Set Variable" doc:id="9bfcb40b-3ea8-485b-9395-abbd271e3416" variableName="nameOfFile"/>
+		<file:write doc:id="9cbb5b74-dc7a-4d3e-96df-7b6cffcca648" config-ref="File_Config" path='#["write/" ++ vars.nameOfFile ++ ".csv"]'>
+			<file:content ><![CDATA[#[%dw 2.0
+output application/json
+---
+payload.customer]]]></file:content>
+		</file:write>
+	</flow>
+	<flow name="9file-connFlow" doc:id="a0ad8a98-b114-4f00-aabc-606f770d5236" >
+		<file:listener doc:name="On New or Updated File" doc:id="1994fc6d-0e4e-444a-bf59-bc27f994b1a1" config-ref="File_Config" directory="write" watermarkMode="CREATED_TIMESTAMP">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</file:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="4a4073f7-ad5d-464c-a5e5-ecbf50ec1ad0" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;"modifiedTime": attributes.lastModifiedTime,&#10;"createdTime": attributes.creationTime,&#10;"fileName": attributes.fileName&#10;}]'/>
+	</flow>
+	<flow name="9file-connFlow1" doc:id="5a4f8871-cff6-4ff3-9448-4b8696a06c53" >
+		<http:listener doc:name="HTTP GET" doc:id="95207d56-c9cd-4831-be2c-6870b6f9b795" config-ref="HTTP_Listener_config" path="/move/{fileName}"/>
+		<file:move doc:name="Move files to different folder" doc:id="300c1b38-1b65-47cc-af6a-be07e8718f4d" config-ref="File_Config" sourcePath='#["write/" ++ attributes.uriParams.fileName ++ ".csv"]' targetPath="read/"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a1cf4843-b8a5-40c1-8951-e0b874a1ad1d" message='#[%dw 2.0&#10;output application/json&#10;---&#10;"file moved to a different folder"]'/>
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"file moved to a different folder"]' doc:name="Set Payload" doc:id="9880787b-87c4-485b-895f-bb90b0e7d1d3" />
+	</flow>
+</mule>

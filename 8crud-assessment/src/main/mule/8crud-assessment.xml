@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="18cc8580-613b-4750-ba3a-22eb3c5d7592" >
+		<vm:queues >
+			<vm:queue queueName="vm_q" />
+		</vm:queues>
+	</vm:config>
+	<flow name="8crud-assessmentFlow" doc:id="1585840e-5b2d-4320-a936-b23a0cd50681" >
+		<http:listener doc:name="Listener" doc:id="c27f40e8-5d41-497a-9488-278295041129" config-ref="HTTP_Listener_config" path="/crud" allowedMethods="GET"/>
+		<db:select doc:id="47ed474f-eaba-42d7-97d5-c0c2092b9ea1" config-ref="Database_Config" doc:name="get all songs">
+			<db:sql ><![CDATA[SELECT * FROM musics;]]></db:sql>
+		</db:select>
+		<logger level="INFO" doc:name="before notification" doc:id="393e2fe0-c18a-4dea-9195-5a72f3fa4594" message='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;{&#10;	"flowName": flow.name,&#10;	"message": "log before the notification"&#10;	&#10;	&#10;}]'/>
+		<vm:publish queueName="vm_q" doc:id="ea47e76d-cb69-4dcd-93d4-f0ca408fc524" config-ref="VM_Config" >
+			<vm:content ><![CDATA[#["message": "a database call to get all songs has been performed"]]]></vm:content>
+		</vm:publish>
+		<logger level="INFO" doc:name="after notification" doc:id="369eda39-97ab-474f-8efa-26cfabe64e2a" message='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;{&#10;	"flowName": flow.name,&#10;	"message": "log after the notification"&#10;	&#10;	&#10;}]'/>
+		<set-payload value="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload" doc:id="40cafbfc-9388-45f7-a7fc-16c73c13bbbb" />
+	</flow>
+	<flow name="INSERT_SONG" doc:id="08ac4064-850f-4a6c-8aa0-a299fe2837df">
+		<http:listener doc:name="POST" doc:id="7628dc19-71a5-40a7-8dcf-0b2249a7a167" config-ref="HTTP_Listener_config" allowedMethods="POST" path="/post" />
+		<db:insert doc:name="Insert songs" doc:id="557cb672-f4bb-479b-956b-0eeb3991e259" config-ref="Database_Config" autoGenerateKeys="true">
+			<db:sql><![CDATA[INSERT INTO musics(musicName) values (:musName)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+
+'musName': payload.song.songName
+
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="before notification" doc:id="6d22eb27-83cc-4a2b-90e4-bde78c47a1df" message='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;{&#10;	"flowName": flow.name,&#10;	"message": "log before the notification"&#10;	&#10;	&#10;}]' />
+		<vm:publish doc:name="Publish" doc:id="41b52086-e036-4c13-97c1-8bcbb790dbde" config-ref="VM_Config" queueName="vm_q">
+			<vm:content ><![CDATA[#["message": "a database call to insert a new song has been performed"]]]></vm:content>
+		</vm:publish>
+		<logger level="INFO" doc:name="after notification" doc:id="bd3bff90-b5af-4512-a62c-90749d57aeab" message='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;{&#10;	"flowName": flow.name,&#10;	"message": "log after the notification"&#10;	&#10;	&#10;}]'/>
+		<choice doc:name="Choice" doc:id="a7cbffb9-d09b-408d-9d4f-b3d0b33118c9">
+			<when expression="#[payload.affectedRows &gt; 0]">
+				<set-payload value='#[%dw 2.0&#10;output application/json &#10;---&#10;{&#10;"success": payload&#10;&#10;}]' doc:name="Set Payload" doc:id="25dc9f0b-c436-437a-8073-caa07db926d9" />
+			</when>
+			<otherwise>
+				<set-payload value='#[%dw 2.0&#10;output application/json &#10;---&#10;{&#10;"insuccess": payload&#10;&#10;}]' doc:name="Set Payload" doc:id="9be9258e-5332-421a-8f46-ffdf9b1f1dcd" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="8crud-assessmentFlow1" doc:id="4a871949-7c5b-4540-8101-2d636568e480" >
+		<vm:listener doc:name="Listener" doc:id="f80a29ae-1b49-4bc4-9664-830d820509a0" config-ref="VM_Config" queueName="vm_q"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d2c797ce-8eac-40e7-af7d-023dc6524cf0" message="#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;payload]"/>
+	</flow>
+</mule>

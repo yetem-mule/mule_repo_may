@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="406211e2-d4ce-45e8-8c54-a1659ec9d8e7" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="choice-routerFlow" doc:id="7056f1c7-067a-48e3-9a75-fb57ea988765" >
+		<http:listener doc:name="Listener" doc:id="a14d6ea9-67ea-4036-bc32-7a74a3c4bd50" config-ref="HTTP_Listener_config" path="/test1"/>
+		<set-payload value='#["London"]' doc:name="Set Payload" doc:id="58b802f3-862c-468b-b2a2-59d7d6985274" />
+		<choice doc:name="Choice" doc:id="cfef4459-a0c3-498c-b074-73c5927a98dd" >
+			<when expression='#[payload == "London"]'>
+				<ee:transform doc:name="PASS" doc:id="787ad862-dcd3-4999-a008-f3a307354c86" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+
+"it is in London"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="FAILED" doc:id="e09da3d4-3f90-4315-b0c9-e14d62fd819e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA["failure"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="522b0294-b6af-4ad9-8f93-c9fc77333d34" message="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]"/>
+	</flow>
+</mule>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9cd941e2-aa23-471d-80f7-21cdf2e8292d" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="scatter-gatherFlow" doc:id="722273de-1934-4a2d-8490-19b8f2656ffa" >
+		<http:listener doc:name="HTTP" doc:id="11376d10-8858-42c0-b299-9f9de44c054b" config-ref="HTTP_Listener_config" path="/scatter"/>
+		<set-payload value='#[" London"]' doc:name="Set Payload" doc:id="517086d2-94b8-4d0d-8af6-830ea5335e8a" />
+		<scatter-gather doc:name="multi req" doc:id="1a88a070-ebdd-46e3-a957-9fb2c73d55ad" >
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="5427e97a-9034-4449-868a-bd88b77ba7d5" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+" DL 345 DCA-ATL" ++ payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+			<route >
+				<ee:transform doc:name="Transform Message" doc:id="1a82122c-da62-4551-9230-442263729f73" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+" B6567 DCA-MBJ" ++ payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+			<route>
+				<try doc:name="Try" doc:id="9a827efc-2912-4f5e-8ce6-a957b5ec1229" >
+					<ee:transform doc:name="BAD DATE" doc:id="2409e9b4-bedd-4489-b093-6939719d7364">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+2/0]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a8243783-cb1e-4917-bb3f-fbb99a2b8d23" >
+							<logger level="INFO" doc:name="MASK THE ERR" doc:id="a5432081-f324-4146-923e-91e2772833d9"/>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="ec57cb5f-0b06-464e-bd37-32332d3d9cf7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload[0].payload ++"," ++ payload[1].payload ++"," ++ payload[2].payload ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="if_else_validation" doc:id="7bcfdb3b-c64b-4834-a4a4-2465424cf44a" >
+		<http:listener doc:name="Listener" doc:id="1e6d3cce-8db6-4ae1-9173-910fc3e36465" config-ref="HTTP_Listener_config" path="/if"/>
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="5843d913-8132-43a8-977a-b13a0201cb0c" value="#[payload]" message='"it is not a number"'/>
+		<ee:transform doc:name="Transform Message" doc:id="272e6f94-7ebd-48e0-be57-39699c771bcb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if(vars.city == "London") "I am in London" else "outside London"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="consume-rest-serv-chinaFlow" doc:id="57cc6deb-18c7-4738-9cb4-fac48a96692d" >
+		<http:listener doc:name="Listener" doc:id="60b0da2e-2804-461f-a46c-7029d5f55364" config-ref="HTTP_Listener_config" path="/api"/>
+		<logger level="INFO" doc:name="Logger" doc:id="4c07be79-4483-400a-9b3c-790fa2c173e0" message="fetch employee flow started #[attributes.uriParams.employeeId]"/>
+		<set-variable value="#[payload.city]" doc:name="city" doc:id="9ebeb873-be2b-47e3-9546-6d65c484a4be" variableName="city"/>
+		<http:request method="GET" doc:name="Request" doc:id="fe4b9145-3f59-4f9c-942a-4fbf8542ca89" config-ref="HTTP_Request_configuration" url="https://api.openweathermap.org/data/2.5/weather">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"appid" : "8e74e7174e3aaec90238a178fa2cdd8a",
+	"q" : vars.city
+}]]]></http:query-params>
+			<http:response-validator >
+				<http:success-status-code-validator values="200..499" />
+			</http:response-validator>
+		</http:request>
+		<choice doc:name="statusCode validation 400..499" doc:id="9de84813-0f57-42fe-91db-5505a713eea8" >
+			<when expression='#[attributes.statusCode as String == "200"]'>
+				<ee:transform doc:name='SUCCESS STATUS "200"' doc:id="e1a40b4f-5f68-4c80-9126-62bb19345e7b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"cityName": vars.city,
+	"Minimum temp": payload.main.temp_min as Number - 273.15 as String ++ " Celsius",
+	"maximum temp" : payload.main.temp_max as Number - 273.15 as String ++ " Celsius"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name='ERROR "400"' doc:id="880ae9b4-1e1f-4539-af68-86a76fb44520" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"cod": "400",
+	"message" : "city not found" 
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

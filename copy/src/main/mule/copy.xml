@@ -1,78 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
-	xmlns:db="http://www.mulesoft.org/schema/mule/db"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<flow name="read_from_db" doc:id="85a58829-5a2d-4c10-abbe-82bdad6f626e" >
-		<http:listener doc:name="HTTP GET" doc:id="3a9138f6-c92f-42c9-b504-be79b934d111" config-ref="HTTP_Listener_config1" path="${http.path.getAllSongs}" allowedMethods="GET"/>
-		<db:select doc:name="get all songs" doc:id="5d48d4d3-066b-4734-aa67-e86ad50c73fd" config-ref="Database_Config1">
-			<db:sql ><![CDATA[select * from musics;]]></db:sql>
-		</db:select>
-		<logger level="INFO" doc:name="Log before notification" doc:id="0efd8e54-afe2-45b8-8c6e-1c6df8107a13" message='#[%dw 2.0
-output application/json
----
-{
-	"flowName": flow.name,
-	"message": "Log Before Notification"
-}]'/>
-		<vm:publish doc:name="Notify request Async" doc:id="0722c1a4-d025-4aa9-b885-e78f336d61ea" config-ref="VM_Config" queueName="queue.environment">
-			<vm:content ><![CDATA[#[{
-	"message": "a database call to get all songs has been performed"
-}]]]></vm:content>
-		</vm:publish>
-		<logger level="INFO" doc:name="Log after notification" doc:id="dbc5fd4d-60ad-46c2-8f10-2e8776c00661" message='#[%dw 2.0
-output application/json
----
-{
-	"flowName": flow.name,
-	"message": "Log After Notification"
-}]'/>
-		<set-payload value="#[%dw 2.0
-output application/json
----
-payload]" doc:name="Set Payload from JAVA to JSON" doc:id="93cfeacf-145b-4100-95b4-491acef4b5d2" />
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="35b87fc9-4a5f-4f9a-a68c-547c9d5d3523" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="772bb0dc-c5ca-4ae1-9ab4-afbfced1a89d" />
+	<configuration-properties doc:name="Configuration properties" doc:id="695ab117-1e60-4eec-8bea-e7b301c4621d" file="config.properties" />
+	<flow name="main" doc:id="8996a82c-6fe6-4c4e-80b5-7f69d8b6db86" >
+		<http:listener doc:name="Listener" doc:id="f0c0d9ff-37ab-4bc3-8300-ffd5ed065eae" config-ref="HTTP_Listener_config" path="/subflow"/>
+		<logger level="INFO" doc:name="start log" doc:id="1a715165-c495-4d08-9cd3-54009582d6af" message="start log"/>
+		<set-variable value="#[attributes.queryParams.mule]" doc:name="store queryParams" doc:id="499f0b81-a846-4219-8746-6bf2d1ca289d" variableName="mule"/>
+		<set-variable value="#[attributes.method]" doc:name="store method" doc:id="1b61a43e-edc2-49c0-ab70-e201dbb16c6f" variableName="method"/>
+		<logger level="INFO" doc:name="middle  Logger" doc:id="0e4eadc4-f07e-49bd-a875-8ba35588cb92" message="middle log"/>
+		<file:read doc:id="fc08a8ee-18f3-48d2-9646-22af48a15315" config-ref="File_Config" path="C:\Users\ywn2\udemycourse\copy\src\test\resources\log4j2-test.xml"/>
+		<set-payload value='#["hi " ++ vars.mule as String ++ " your method " ++ vars.method]' doc:name="print attributes using stored value" doc:id="2e71894f-28f7-4f96-9088-4868b0924531" />
+		<logger level="INFO" doc:name="end log" doc:id="2376a164-192b-42e3-88f2-611cd24f4600" message='#["successful ::" ++ payload]'/>
 	</flow>
-	<flow name="insert_into_db" doc:id="4897f032-e2cd-4aa1-bbd6-bad1784c530f" >
-		<http:listener doc:name="HTTP POST" doc:id="53410a85-7e57-413c-804e-a504b1b02c40" config-ref="HTTP_Listener_config1" path="${http.path.addNewSong}" allowedMethods="POST"/>
-		<db:insert doc:name="Insert new song" doc:id="1b2b9d21-faca-49b2-a20a-8701590be096" config-ref="Database_Config1" autoGenerateKeys="true">
-			<db:sql ><![CDATA[INSERT INTO musics (musicName) VALUES (:songName)]]></db:sql>
-			<db:input-parameters ><![CDATA[#[{
-	'songName': payload.song.songName
-}]]]></db:input-parameters>
-		</db:insert>
-		<logger level="INFO" doc:name="Log before notification" doc:id="266add4a-4a7e-4ad1-9e42-e70f436d5b7f" message='#[%dw 2.0
-output application/json
----
-{
-	"flowName": flow.name,
-	"message": "Log Before Notification"
-}]'/>
-		<vm:publish doc:name="Notify request Async" doc:id="bd49ee5d-9881-4ea7-9b62-4de7bac89542" config-ref="VM_Config" queueName="queue.environment">
-			<vm:content ><![CDATA[#[{
-	"message": "a database call to insert a new song has been performed"
-}]]]></vm:content>
-		</vm:publish>
-		<logger level="INFO" doc:name="Log after notification" doc:id="3655a976-0121-4d5f-bba7-b5d5d292319e" message='#[%dw 2.0
-output application/json
----
-{
-	"flowName": flow.name,
-	"message": "Log After Notification"
-}]'/>
-		<set-payload value="#[%dw 2.0
-output application/json
----
-payload]" doc:name="Set Payload from JAVA to JSON" doc:id="4919af3e-7ab5-4573-ae3c-14b8e2cfde31" />
+	<flow name="parent" doc:id="d52cef5c-6c80-4cd3-8f21-06af21220461" >
+		<http:listener doc:name="Listener" doc:id="aaa5e20c-5e47-4a31-a762-153fe901b47f" config-ref="HTTP_Listener_config" path="/parent"/>
+		<logger level="INFO" doc:name="Logger" doc:id="f8544560-6c72-40ab-8f07-1bf21de30a29" message="#[payload]"/>
+		<flow-ref doc:name="Flow Reference" doc:id="6f63b45e-6c58-415b-81e9-8672ff54e821" name="child"/>
+		<logger level="INFO" doc:name="sorry mom" doc:id="eec46b75-9ef4-4c40-a32c-f157850fc3d4" message="sucess"/>
 	</flow>
-	<flow name="log_request_attempt" doc:id="d1ed5254-8928-403e-b50d-51eab2c368ba" >
-		<vm:listener queueName="queue.environment" doc:name="Listener" doc:id="90203239-c9a2-4f94-b8d4-78e3fb2c8d05" config-ref="VM_Config"/>
-		<logger level="INFO" doc:name="Log message" doc:id="20b83acb-3c00-48b8-9953-9477cf960401" message="#[%dw 2.0
-output application/json
----
-payload]"/>
+	<sub-flow name="child" doc:id="65f1e9c8-521c-4698-87bc-f3c5285d1cdf" >
+		<set-payload value='#["mom  iam sorry"]' doc:name="overridde parents payload" doc:id="9bb2b628-3e8a-4fe9-9f6c-b02fdf931a9d" />
+	</sub-flow>
+	<flow name="concat-null" doc:id="a5f68ccc-d75f-4524-8566-ea9c8fd3ee3e" >
+		<http:listener doc:name="Listener" doc:id="60b96809-562f-42ff-908b-7a7fbb3a06c3" config-ref="HTTP_Listener_config" path="/dw"/>
+		<logger level="INFO" doc:name="Logger" doc:id="ae2b6dab-dd6d-4b1a-bd06-ae938cd95bf7" message="start log"/>
+		<ee:transform doc:name="{ } null" doc:id="34471e86-9501-47a8-ad5f-04ecb1ead023" >
+			<ee:message >
+				<ee:set-payload ><![CDATA["successful from new target"]]></ee:set-payload>
+				<ee:set-attributes ><![CDATA["servan"]]></ee:set-attributes>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="methodname" ><![CDATA[attributes.method]]></ee:set-variable>
+				<ee:set-variable variableName="mule" ><![CDATA[attributes.queryParams.mule]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="cant coerc null to string" doc:id="fb6de2a9-8997-4ff7-a8da-431e95aed242" message='#["successfuly completed ::"  ++ payload]'/>
 	</flow>
+	<flow name="copyFlow" doc:id="6d9e9cb8-d149-4b82-a1b8-41c70ed845be" >
+		<http:listener doc:name="Listener" doc:id="f8d3dcf3-1e70-4cb2-823d-88c21ab0deb5" config-ref="HTTP_Listener_config" path="/properties"/>
+		<logger level="INFO" doc:name="Logger" doc:id="e08787ff-d58b-4054-b19e-2207c4fa9619" message="start"/>
+		<set-payload value='${message}' doc:name="Set Payload" doc:id="f91110e2-4450-41a1-90f1-11fab87efd49" />
+	</flow>
+
 </mule>

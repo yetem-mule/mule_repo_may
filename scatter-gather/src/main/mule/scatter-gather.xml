@@ -35,7 +35,7 @@ output application/json
 			</route>
 			<route>
 				<try doc:name="Try" doc:id="9a827efc-2912-4f5e-8ce6-a957b5ec1229" >
-					<ee:transform doc:name="BAD DATE" doc:id="2409e9b4-bedd-4489-b093-6939719d7364">
+					<ee:transform doc:name="BAD DATA" doc:id="2409e9b4-bedd-4489-b093-6939719d7364">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json

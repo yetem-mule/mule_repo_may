@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="17cd3510-04d8-43c2-a671-7d346a970627" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="dw-session-5Flow" doc:id="ae971310-a5e1-4a1a-825a-07c6054ea2fc" >
+		<http:listener doc:name="Listener" doc:id="ff56fd5a-a7cc-4279-91df-1dc97bf37dc7" config-ref="HTTP_Listener_config" path="/dw"/>
+		<ee:transform doc:name="print postman input" doc:id="b327b513-a43c-4a30-91f2-81f454f42cc3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"hi " ++ payload.name  ++ " you work for " ++ attributes.queryParams.org
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw" doc:id="c689fb75-0f87-48ad-9802-53d3c5be11de" >
+		<ee:transform doc:name="map" doc:id="7cf03bdc-bf34-478c-b60d-8bae650ae4f5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var a = [
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": ["MuleSoft", "aws","delta"]
+	 }
+	,
+	{
+	"name": "yaye",
+	"id": 134,
+	"org": ["Mule","abc"]
+	}
+	,
+	{
+	"name": "sara",
+	"id": 34,
+	"org": ["Soft","xyz","att"]
+	}
+	,
+	{
+	"name": "didi",
+	"id": 24,
+	"org": ["Mule", "bb","aa"]
+	} 
+]
+
+---
+/*
+ *
+a map {
+	"name": upper($.name),
+	"company":$.org map{
+		"company-name": $.name ++ "-" ++ $.id ++ "-" ++ $.org  // this will not allow concat .name will not "MuleSoft-yetem" so use below method
+		 that has mapping paramater
+		
+		
+	}
+}
+
+*
+*/ 
+ 
+a map ((item, index) -> {
+"candidateName": upper(item.name),
+"company" : item.org  map {
+	"company-name" : $  ++ "-" ++ item.name //this way concat is allwed casue name can be mapped to
+	},
+"what is numbering" : index
+})
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="canccat null" doc:id="a7a7799e-7092-49d2-9f1d-ad7f2f67dcb5">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+
+
+output application/json
+
+var a = 
+[
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": null
+	 },
+	 {
+	 "name": "yet",
+	"id": 234,
+	"org": "Mule" 
+	 	
+	 }
+	 
+]
+---
+a map {
+	"Name": (upper($.name)),
+	"id" : $.id,
+	"organization": $.org,
+	"organization-name" :$.id ++ "-" ++ $.name ++ "-" ++ ($.org default "NoOrg") 
+		
+	
+}
+// wo the default wont let you concat a null]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="mapObject/pluck" doc:id="e59dee1f-8f81-4b5d-a986-f08315eea133">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var a = 
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": "MuleSoft" 
+	 }
+---
+a pluck (value, key, index) -> {
+	
+	"what is a value": value,
+	//"what is a key" : key,
+	//"what is an index" : index
+}
+
+
+
+/*
+ * 
+ 
+a mapObject (value, key, index) -> {
+	
+	"what is a value": value,
+	//"what is a key" : key,
+	//"what is an index" : index
+}
+* 
+*/]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="to XML" doc:id="066b4c19-2aee-4379-bf7c-6dfc86c17af2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+var a =[
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": "infosys"
+	 },
+	 {
+	 "name": "yet",
+	"id": 234,
+	"org": "Mule" 
+	 	
+	 }
+	 
+]
+---
+employees:
+Empprofile:a map{ 
+	"name": $.name,
+	"id": $.id,
+	"org": $.org 
+	
+}
+
+// you need to have both roots this allow to wrap each object ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="reduce" doc:id="9482f9a2-a2f1-4444-956d-6ac1c9ea7596" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var a =
+
+[
+	{
+	"name": "sarha",
+	"id": 34,
+	"org": "twitter"
+		
+	}
+,
+{
+	"name": "sara",
+	"id": 34,
+	"org": "facebook"
+	}
+	,
+	{
+	"name": "didi",
+	"id": 24,
+	"org": "Mule"
+	} 
+]
+// reduce transform everything in to a single json object
+---
+List: 
+a reduce ($ ++ $$)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="flatten ways" doc:id="16243671-fd53-41de-844f-93e8e7471511" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var a =
+
+[
+	{
+	"name": "sarha",
+	"id": 34,
+	"org": "twitter"
+		
+	}
+,
+{
+	"name": "sara",
+	"id": 34,
+	"org": "facebook"
+	}
+	,
+	{
+	"name": "didi",
+	"id": 24,
+	"org": "Mule"
+	} 
+]
+var b =
+
+[
+	{
+	"name": "dre",
+	"id": 34,
+	"org": "tgi"
+		
+	}
+,
+{
+	"name": "yt",
+	"id": 34,
+	"org": "face"
+	}
+	,
+	{
+	"name": "ret",
+	"id": 24,
+	"org": "Mu"
+	} 
+]
+---
+//3 as String
+//3 as Number
+flatten((a map upper($.name)) + (b map upper($.name)))
+//(a map upper($.name)) + (b map upper($.name))
+//a map upper($.name)
+//(flatten(a + b)).id
+//flatten(a + b)
+//(a + b)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-session-5Flow2" doc:id="76e29760-d62c-4d25-850b-b49751e8ab95" >
+		<ee:transform doc:name="private flow for lookup()" doc:id="218ad921-ffe8-41d9-871b-47249e3a0426" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Hello Yate " ++ payload as String]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-session-5Flow3" doc:id="bbf5a303-e70d-4a44-b9b8-cd8ee7fc96b0" >
+		<http:listener doc:name="Listener" doc:id="0f7e3ca4-ce99-47c4-87c8-9cf57befc54d" config-ref="HTTP_Listener_config" path="/lookup"/>
+		<ee:transform doc:name="mule::lookup" doc:id="6794137a-203b-44e6-a17c-03254991e08c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: Mule::lookup("dw-session-5Flow2", "how are you")
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dw-session-5Flow1" doc:id="eb9bac74-7774-4edb-8a2d-e48567d80937" >
+		<ee:transform doc:name="Filter groupBy else if" doc:id="a1316adb-a8cd-471f-8813-40a2253299c1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var a =
+
+[
+	{
+	"name": "sarha",
+	"id": 100,
+	"org": "twitter"
+		
+	}
+,
+{
+	"name": "sara",
+	"id": 10,
+	"org": "facebook"
+	}
+	,
+	{
+	"name": "didi",
+	"id": 233,
+	"org": "Mule"
+	} 
+]
+---
+((a map {
+	
+	"name": $.name,
+	"rollNum": $.id,
+	"org":$.org,
+	"status": if ($.id > 100) "PASS" else "FAIL"
+}) groupBy $.status)."FAIL"
+
+/*
+ * (a map {
+	
+	"name": $.name,
+	"rollNum": $.id,
+	"org":$.org,
+	"status": if ($.id > 100) "PASS" else "FAIL"
+}) groupBy $.status
+* 
+*/
+
+
+/*
+ * (a map {
+	
+	"name": $.name,
+	"rollNum": $.id,
+	"org":$.org
+	
+}) orderBy $.name
+* 
+*/
+
+//groupBy orderBy filter
+
+/*
+ * (a map {
+	
+	"name": $.name,
+	"rollNum": $.id,
+	"org":$.org
+	}) filter $.rollNum> 100
+	* 
+	*/
+//coz u have to use key name that is used inside of map for filteringotherwise it throw null error
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="XML accessing attributes" doc:id="e4e50d08-5a50-4cae-a629-2f944ffffb85" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+var a =[
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": "infosys"
+	 },
+	 {
+	 "name": "yet",
+	"id": 234,
+	"org": "Mule" 
+	 	
+	 }
+	 
+]
+---
+ emp: 
+ {
+ (a map {
+    emppro @(id:$.id):{ // you see $ notation must inside the map 
+     "id":$.id,
+     "name":"name",
+     "organization":$.org}
+ })
+ }
+ 
+ /*
+  * 
+  emp: emppro @("id":"dummy"):
+ a map {
+
+     "id":$.id,
+     "name":"name",
+     "organization":$.org
+ }
+ * 
+ */
+// @ notation allow you to pass attributes (id) next to second root tag Emppro ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Custome fun" doc:id="1dbc7453-3056-4f0d-9e50-76a297e637e3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var a =[
+	{
+	"name": "yetem",
+	"id": 234,
+	"org": "infosys",
+    "math":51,
+    "physics": 55
+	 },
+	 {
+	 "name": "yet",
+	"id": 234,
+	"org": "Mule",
+    "math":41,
+    "physics":42
+	 	
+	 }
+	 
+]
+
+fun CheckGrade (grade)= if (grade > 50) "PASS" else "FAIL"fun UniqeItem(param0: String, param1: Number) = param0 ++ "-" ++ param1
+
+
+
+---
+UniqeItem("yetem", 41)
+
+//CheckGrade("53")
+
+
+
+/*
+ * 
+ 
+ a map  {
+"candidateName": $.name,
+"idNum":$.id,
+"GradeDetails":{
+    "math": {grade: $.math, status : CheckGrade($.math)},
+    "physics" :{grade: $.physics, status : CheckGrade($.physics)}
+
+    
+}}
+*
+*/
+
+
+/*
+ * 
+ 
+a map {
+"candidateName": $.name,
+"idNum":$.id,
+"GradeDetails":{
+    "math": {grade: $.math, status : if($.math > 50) "PASS" else "FAIL"},
+    "physics":{grade: $.physics, status : if($.physics > 50) "PASS" else "FAIL"}
+
+    }
+}
+
+* 
+*/
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

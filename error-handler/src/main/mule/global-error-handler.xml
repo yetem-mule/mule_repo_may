@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<error-handler name="global-error-handlerError_Handler" doc:id="743c1d95-a5a4-40a3-b26c-8481408f8e16" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="014e2209-52f9-499e-ab78-9cf9477a9aa6" type="HTTP:CONNECTIVITY, HTTP:FORBIDDEN">
+			<set-payload value='#["handled in global"]' doc:name="Set Payload" doc:id="35685b1f-0265-4bda-bc4a-d689f5a2e984" />
+		</on-error-continue>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a87ec6e1-94ba-47a0-81f3-8c6de93893a3" type="HTTP:CONNECTIVITY, HTTP:FORBIDDEN">
+			<set-payload value='#["handled in global p"]' doc:name="Set Payload" doc:id="022e722a-514a-4271-8b8c-75fc366fbbf5" />
+		</on-error-propagate>
+	</error-handler>
+</mule>

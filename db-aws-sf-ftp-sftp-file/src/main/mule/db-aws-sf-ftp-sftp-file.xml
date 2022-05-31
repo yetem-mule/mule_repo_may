@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd">
+	<flow name="db" doc:id="9907738b-0309-400c-8b00-abec252d0ede" >
+		<http:listener doc:name="SELECT" doc:id="eff17b95-ca33-463c-b4a2-507751c261e7" config-ref="HTTP_Listener_config" path="/select"/>
+		<db:select doc:id="d2f04848-adf5-46b8-9d9f-242b8c27d592" config-ref="Database_Config" doc:name="SELECT/QUERY">
+			<db:sql ><![CDATA[SELECT * FROM mule_db.customers where id =:clientId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+clientId: attributes.queryParams.db
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="3d5465bd-2e83-4013-a71f-ff8c7526b7cc" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="sizeOf" doc:id="749f2bfe-8879-49fe-b937-a4b45d02ae44" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<s3:create-object doc:name="Create object" doc:id="19b13c0b-1e54-460b-a718-8430aed9e582" config-ref="Amazon_S3_Configuration" bucketName="muleyetembucket" key="mulesoftDzone/MyDbDetails"/>
+				<ee:transform doc:name="Transform Message" doc:id="20dc7c83-a319-49cd-aab2-36162b279ff9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="no payload" doc:id="b74981d5-9403-4fbf-aca7-6f0573f6a030" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "No record of payoad"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="f8e8d2bf-09e1-4368-9660-44699e1c388f" message="#[payload]"/>
+	</flow>
+</mule>

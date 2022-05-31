@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="error-handlerFlow" doc:id="3e28bf04-8ceb-4f38-af10-7ac9023b15f8" >
+		<http:listener doc:name="Listener" doc:id="744b6a7b-b6e9-4e4f-aa9c-906a4e81eedf" config-ref="HTTP_Listener_config" path="/error1">
+			<http:error-response >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<set-payload value='#["before http req"]' doc:name="b4 http req" doc:id="a857ac9a-dbc0-4608-a652-7bcc9aad10c8" />
+		<flow-ref doc:name="Flow Reference" doc:id="1a2c385f-d1d3-4bab-a4d5-93be9fefdb51" name="error-handlerFlow1"/>
+		<set-payload value='#["SUCESS"]' doc:name='"SUCESS"' doc:id="66cea161-ead0-4374-8ac0-2504718ee9fa" />
+	</flow>
+	<flow name="error-handlerFlow1" doc:id="c06988e2-2a48-4ecb-ad04-dab580aeb189">
+		<http:request method="GET" doc:name="Request" doc:id="924626eb-b823-4299-8c01-3ddfb6c8e239" url="www.oi.o.com" />
+		<set-payload value="#[payload]" doc:name="success in priavte" doc:id="a2324344-0941-437c-aa72-815fdacc9ada" />
+	</flow>
+	<flow name="error-handlerFlow2" doc:id="57ea1550-cf26-4d25-832a-df04567ba274" >
+		<http:listener doc:name="Listener" doc:id="b4083ef2-0ab3-4419-9c4e-014ce39c2adf" config-ref="HTTP_Listener_config" path="/error2"/>
+		<http:request method="GET" doc:name="Request" doc:id="2e81846a-a37a-466f-9e78-cb616e2f6dbb" config-ref="HTTP_Request_configuration" url="www.ior.com"/>
+		<choice doc:name="Choice" doc:id="720ca860-fc35-4d9f-9aa5-2f2b57fc4b5b" >
+			<when expression="#[isEmpty(payload)]">
+				<raise-error doc:name="your payload is empty" doc:id="7180628d-ad2f-44b9-bbbc-ccd9cdb24f32" type="GONE:CASE" description="your payload is empty"/>
+			</when>
+			<otherwise >
+				<set-payload value='#["default"]' doc:name="Set Payload" doc:id="92d74f1b-5605-4958-aba9-d0eb5e943da2" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="b20b082d-c5e9-486f-aebf-0fe7cb18e721" message="#[payload]"/>
+	</flow>
+</mule>
